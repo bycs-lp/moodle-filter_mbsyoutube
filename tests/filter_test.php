@@ -66,10 +66,15 @@ class filter_test extends advanced_testcase {
         $filter = new \filter_mbsyoutube($context, []);
 
         // Expected significant part for the next few assertions.
-        $expected = '<div class="mbsyoutube-twoclickwarning-boxtext"><strong>Privacy Policy</strong><br />Once the video plays, '
-        . 'personal <a href="https://policies.google.com/privacy" target="_blank" style="color:#e3e3e3 !important;">information'
-        . '</a>, such as the IP address, will be sent to YouTube.</div>
-        <input type="button" class="mbsyoutube-twoclickwarning-button mbsyoutube-confirm" value="Start videos ✓"/>';
+        $expected = '<div class="mbsyoutube-twoclickwarning-boxtext">'
+        . '<strong>Data protection notice</strong>'
+        . '<br />As soon as the video is played, personal <a href="https://policies.google.com/privacy" '
+        . 'target="_blank" style="color:#e3e3e3 !important;">data</a> such as the IP address is transmitted to YouTube'
+        . '</div>
+        <input type="button" class="mbsyoutube-twoclickwarning-button mbsyoutube-confirm" value="'
+        . 'Watch video anyway ✓'
+        . '"/>';
+
         $expected2 = '{"modestbranding":1,"iv_load_policy":3,"enablejsapi":1,"origin":"' . $CFG->wwwroot .'"}';
         $expected3 = 'id="yt___phpunit___qcQ6x123KwU"';
         $expected4 = '<p>YouTube eingefügt<br>';
@@ -80,6 +85,7 @@ class filter_test extends advanced_testcase {
         . '<a href="https://www.youtube.com/watch?v=qcQ6x123KwU">Link zum Video</a></p>'
         . '<p>Das ist das Ende!</p>';
         $filtered = $filter->filter($youtube);
+
         $this->assertStringContainsString($expected, $filtered);
         $this->assertStringContainsString($expected2, $filtered);
         $this->assertStringContainsString($expected3, $filtered);
