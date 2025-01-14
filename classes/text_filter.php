@@ -14,13 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Filter class
- *
- * @package    filter_mbsyoutube
- * @copyright  2017 Andreas Wagner, 2019 Peter Mayer, ISB Bayern
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+namespace filter_mbsyoutube;
+
+use core_cache\cache;
+use moodle_url;
+use context_system;
+use stdClass;
 
 /**
  * Filter class mbsyoutube.
@@ -29,7 +28,7 @@
  * @copyright  2020 Peter Mayer, ISB Bayern
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class filter_mbsyoutube extends moodle_text_filter {
+class text_filter extends \core_filters\text_filter {
 
     /**
      * @var array $youtubevideoids Array of all YouTube Video IDs of course page.
@@ -51,8 +50,8 @@ class filter_mbsyoutube extends moodle_text_filter {
      * for each piece of text being filtered, so it is responsible
      * for controlling its own execution cardinality.
      *
-     * @param moodle_page $page the page we are going to add requirements to.
-     * @param context $context the context which contents are going to be filtered.
+     * @param \moodle_page $page the page we are going to add requirements to.
+     * @param \context $context the context which contents are going to be filtered.
      * @since Moodle 2.3
      */
     public function setup($page, $context) {
@@ -103,8 +102,8 @@ class filter_mbsyoutube extends moodle_text_filter {
             . ')/';
 
         $patternsandcallbacks = [
-            $regexyoutube => "filter_mbsyoutube::youtube_callback",
-            $regexyoutubeshorturl => "filter_mbsyoutube::youtube_shorturl_callback",
+            $regexyoutube => "\\filter_mbsyoutube\\text_filter::youtube_callback",
+            $regexyoutubeshorturl => "\\filter_mbsyoutube\\text_filter::youtube_shorturl_callback",
         ];
 
         $newtext = preg_replace_callback_array(
@@ -121,7 +120,7 @@ class filter_mbsyoutube extends moodle_text_filter {
      * Form the html attributes needed for the wrapper.
      * @return string $styles
      */
-    protected function get_style_attributs() {
+    protected function get_style_attributs(): string {
         if ($backgroundfile = get_config('filter_mbsyoutube', 'mbsyoutube_two_click_background')) {
             $backgroundurl = moodle_url::make_pluginfile_url(
                 context_system::instance()->id,
@@ -132,7 +131,7 @@ class filter_mbsyoutube extends moodle_text_filter {
                 $backgroundfile
             );
         } else {
-            $backgroundurl = null;
+            $backgroundurl = '';
         }
         $styles = 'background-image: url(' . $backgroundurl . ');';
         return $styles;
@@ -141,12 +140,13 @@ class filter_mbsyoutube extends moodle_text_filter {
     /**
      * Get hasuseraccepted from cache.
      *
-     * @return bool $hasuseraccepted
+     * @return mixed $hasuseraccepted  - the data that was associated with the key,
+     *                                   or false if the key did not exist.
      */
     protected function get_hasuseraccepted() {
         global $USER;
         $courseid = $this->courseid;
-        $cache = \cache::make('filter_mbsyoutube', 'mbsexternalsourceaccept');
+        $cache = cache::make('filter_mbsyoutube', 'mbsexternalsourceaccept');
         return $cache->get($USER->id . "_" . $courseid . "_YouTube");
     }
 
@@ -156,7 +156,7 @@ class filter_mbsyoutube extends moodle_text_filter {
      * @param array $match
      * @return string Url
      */
-    protected function youtube_callback($match) {
+    protected function youtube_callback(array $match): string {
         $hasuseraccepted = $this->get_hasuseraccepted();
         $styles = $this->get_style_attributs();
 
@@ -188,7 +188,7 @@ class filter_mbsyoutube extends moodle_text_filter {
      * @param array $match
      * @return string $ytwrapper YouTube Video wrapper element.
      */
-    protected function youtube_shorturl_callback($match) {
+    protected function youtube_shorturl_callback(array $match): string {
 
         $hasuseraccepted = $this->get_hasuseraccepted();
 
@@ -222,7 +222,12 @@ class filter_mbsyoutube extends moodle_text_filter {
      * @param string $styles
      * @return string HTML markup
      */
-    private function render_two_click_version_youtube($videoid, $hasuseraccepted = false, $urlparam = [], $styles = '') {
+    private function render_two_click_version_youtube(
+            string $videoid,
+            bool $hasuseraccepted = false,
+            array $urlparam = [],
+            string $styles = ''
+    ): string {
         global $OUTPUT;
 
         $data = new stdClass();
@@ -269,9 +274,9 @@ class filter_mbsyoutube extends moodle_text_filter {
      * Gets all URL query parameters and returns allowed parameters as url string.
      *
      * @param array $params
-     * @return string URL parameters string
+     * @return array URL parameters
      */
-    private function build_url_querystring($params) {
+    private function build_url_querystring(array $params): array {
         global $CFG;
         $preconfparam = [
             'modestbranding' => 1,

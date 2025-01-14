@@ -22,4 +22,9 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
-$definitions = ['mbsexternalsourceaccept' => ['mode' => cache_store::MODE_SESSION]];
+
+$definitions = [
+        'mbsexternalsourceaccept' => [
+                'mode' => cache_store::MODE_SESSION,
+        ],
+];

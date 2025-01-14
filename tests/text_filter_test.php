@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace filter_mbsyoutube;
+
 /**
  * Unit tests.
  *
@@ -21,30 +23,15 @@
  * @category test
  * @copyright 2019 Franziska Hübler, 2019 Peter Mayer, ISB Bayern
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \filter_mbsyoutube\text_filter
  */
-
-namespace filter_mbsyoutube;
-
-use advanced_testcase;
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-require_once($CFG->dirroot . '/filter/mbsyoutube/filter.php'); // Include the code to test.
-
-/**
- * Test case for filter_mbsyoutube.
- *
- * @copyright 2019 Peter Mayer, ISB Bayern
- * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class filter_test extends advanced_testcase {
+final class text_filter_test extends \advanced_testcase {
     /**
-     * Test case for filter_mbsyoutube.
+     * Test cases for filter_mbsyoutube.
      *
-     * @covers \filter_mbsyoutube\filter::filter
+     * @covers ::filter
      */
-    public function test_links() {
+    public function test_links(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);
@@ -63,7 +50,7 @@ class filter_test extends advanced_testcase {
         $filterobject->sortorder = 0;
         $DB->insert_record('filter_active', $filterobject);
 
-        $filter = new \filter_mbsyoutube($context, []);
+        $filter = new text_filter($context, []);
 
         // Expected significant part for the next few assertions.
         $expected = '<div class="mbsyoutube-twoclickwarning-boxtext">'
