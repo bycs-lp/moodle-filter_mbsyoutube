@@ -16,23 +16,22 @@
 /**
  * Javascript controller YouTube Videos.
  *
- * @module     filter_mbsyoutube/youtubevideos
- * @package    filter_mbsyoutube
+ * @module     filter_mbsyoutube/youtube_api
  * @copyright  2019 Peter Mayer, ISB Bayern, peter.mayer@isb.bayern.de
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import Ajax from 'core/ajax';
-
 let videos = {};
 let players = {};
 
-export const init = () => {
-    // need to wait for the load event, since the iframe_api might not be there yet.
-    window.addEventListener('load', initPlayer, false);
+export const init = (loaded = false) => {
+    if (!loaded) {
+        // Need to wait for the load event, since the iframe_api might not be there yet.
+        window.addEventListener('load', initPlayer, false);
+    }
 
     // If there is no mbsyoutube-ytiframe yet: Observe the DOM if there will be a change.
-    var observer = new MutationObserver(function () {
+    var observer = new MutationObserver(function() {
         // Fired when a mutation occurs.
         if (document.querySelectorAll('.mbsyoutube-ytiframe').length > 0) {
             initPlayer();
@@ -45,14 +44,14 @@ export const init = () => {
         subtree: true,
         childList: true
     });
-}
+};
 
 /**
  * Initialize the Players.
  */
 function initPlayer() {
 
-    document.querySelectorAll('.mbsyoutube-ytiframe').forEach(function (node) {
+    document.querySelectorAll('.mbsyoutube-ytiframe').forEach(function(node) {
         var playerid = node.id.split("___");
         var videoid = playerid[2];
         var videouniqid = playerid[1];
@@ -67,7 +66,7 @@ function initPlayer() {
  */
 function loadPlayers() {
     for (const [key, value] of Object.entries(videos)) {
-        createYouTubePlayer(value['videoid'], value['ytparam'], key);
+        createYouTubePlayer(value.videoid, value.ytparam, key);
     }
 }
 
@@ -78,6 +77,11 @@ function loadPlayers() {
  * @param {string} uniqeid
  */
 function createYouTubePlayer(videoid, ytparam, uniqeid) {
+    const targetElement = document.getElementById('yt___' + uniqeid + '___' + videoid);
+    if (targetElement) {
+        targetElement.removeAttribute('hidden');
+    }
+    // eslint-disable-next-line no-undef
     players[uniqeid] = new YT.Player('yt___' + uniqeid + '___' + videoid, {
         videoId: videoid,
         playerVars: ytparam,

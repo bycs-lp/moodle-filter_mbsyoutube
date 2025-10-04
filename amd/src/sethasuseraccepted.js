@@ -16,8 +16,7 @@
 /**
  * Javascript set youtube provider cache .
  *
- * @module     filter_mbsyoutube/setvideoprovidercache
- * @package    filter_mbsyoutube
+ * @module     filter_mbsyoutube/sethasuseraccepted
  * @copyright  2019 Peter Mayer, ISB Bayern, peter.mayer@isb.bayern.de
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,6 +24,7 @@
 import $ from 'jquery';
 import Ajax from 'core/ajax';
 import Notification from 'core/notification';
+import {init as initYTPlayers} from 'filter_mbsyoutube/youtube_api';
 
 let mycourseid = 0;
 
@@ -37,10 +37,11 @@ export const init = (courseid) => {
         subtree: true,
         childList: true
     });
-}
+};
 
 /**
  * Mark a medium as accepted.
+ * @param {number} mycourseid
  * @param {string} provider
  */
 function onVideoAcceptanceChange(mycourseid, provider) {
@@ -50,9 +51,14 @@ function onVideoAcceptanceChange(mycourseid, provider) {
             provider: provider,
             courseid: mycourseid
         },
-        done: function (response) {
+        done: function(response) {
             if (response) {
-                location.reload();
+                var ytscript = document.createElement('script');
+                ytscript.onload = function() {
+                    initYTPlayers(true);
+                };
+                ytscript.src = 'https://www.youtube.com/iframe_api';
+                document.head.appendChild(ytscript);
             }
         },
         fail: Notification.exception
