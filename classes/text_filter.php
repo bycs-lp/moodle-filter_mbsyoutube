@@ -81,29 +81,45 @@ class text_filter extends \core_filters\text_filter {
             return $text;
         }
 
-        // When adding a new regex command, there must be added a new if clause in the callback function, too.
+        // Pattern for mediaplugin_videojs wrapped YouTube videos.
+        // This must come first to match the complete wrapper before matching inner elements.
+        // Matches complete div wrapper and captures the full YouTube URL with parameters.
+        $regexmediaplugindiv = '/('
+            . '(<div[^>]*class="[^"]*mediaplugin[^"]*"[^>]*>.*?'
+            . '<video[^>]*>.*?'
+            . '(?:https?:\/\/)?(?:www\.)?(?:'
+            . 'youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/)'
+            . '|youtu\.be\/'
+            . ')([\w\d\-_]+)([^"&]*)'
+            . '.*?<\/video>.*?<\/div>)'
+            . ')/s';
+
         $regexyoutube = '/('
-            . '((<video[^>]+><source[^>]?src=")(((http|https):\/\/){0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)'
-            . '(\/watch\?v=)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)'
-            . '(">[^<]+<\/video>)?)'
-            . '|((<a[^>]?href=")?(((http|https):\/\/){0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)(\/watch\?v=)'
-            . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)("?[^<]+<\/a>)?)'
-            . '|(<iframe(.*)src="((http|https):\/\/{0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\/embed\/\b)'
-            . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"(.*)>(.*)<\/iframe>)'
-            . '|(<a[^>]?href=")?(((http|https):\/\/){0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)(\/embed\/)'
-            . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?("?[^<]+<\/a>)?)'
-            . '|(<iframe(.*)src="((http|https):\/\/{0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)(\/watch\?v=)'
-            . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"(.*)>(.*)<\/iframe>)'
+            . '(<video[^>]+><source[^>]*src="(((http|https):\/\/){0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)'
+            . '(\/watch\?v=)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>[^<]*<\/video>)'
+            . '|(<iframe[^>]*src="((http|https):\/\/{0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\/embed\/\b)'
+            . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>.*?<\/iframe>)'
+            . '|(<iframe[^>]*src="((http|https):\/\/{0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)(\/watch\?v=)'
+            . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>.*?<\/iframe>)'
+            . '|(<a[^>]*href="(((http|https):\/\/){0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)(\/watch\?v=)'
+            . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>[^<]+<\/a>)'
+            . '|(<a[^>]*href="(((http|https):\/\/){0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)(\/embed\/)'
+            . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>[^<]+<\/a>)'
+            // Plain URL patterns (not inside HTML tags).
+            . '|(?<!["\'])((https?:\/\/)(www\.youtube(-nocookie)?\.com)(\/watch\?v=)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]*)?)'
+            . '|(?<!["\'])((https?:\/\/)(www\.youtube(-nocookie)?\.com)(\/embed\/)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]*)?)'
             . ')/';
         $regexyoutubeshorturl = '/('
-            . '((<a[^>]?href=")((http|https):\/\/youtu.be\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]+)?)"?[^<]+<\/a>)'
-            . '|((<video[^>]+><source[^>]?src=")((http|https):\/\/youtu.be\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]+)?)"?[^<]+<\/video>)'
-            . '|((http|https):\/\/youtu.be\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]+)?)'
+            . '(<a[^>]*href="((http|https):\/\/youtu\.be\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]+)?)"[^>]*>[^<]+<\/a>)'
+            . '|(<video[^>]+><source[^>]*src="((http|https):\/\/youtu\.be\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]+)?)"[^>]*>[^<]*<\/video>)'
+            // Plain short URL pattern (not inside HTML tags).
+            . '|(?<!["\'])((https?:\/\/)(youtu\.be)\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]*)?)'
             . ')/';
 
         $patternsandcallbacks = [
-            $regexyoutube => "\\filter_mbsyoutube\\text_filter::youtube_callback",
-            $regexyoutubeshorturl => "\\filter_mbsyoutube\\text_filter::youtube_shorturl_callback",
+            $regexmediaplugindiv => [$this, 'mediaplugin_div_callback'],
+            $regexyoutube => [$this, 'youtube_callback'],
+            $regexyoutubeshorturl => [$this, 'youtube_shorturl_callback'],
         ];
 
         $newtext = preg_replace_callback_array(
@@ -151,6 +167,49 @@ class text_filter extends \core_filters\text_filter {
     }
 
     /**
+     * Callback to replace mediaplugin_videojs div wrapper with DSGVO conform style.
+     *
+     * @param array $match Regex match array
+     * @return string Replaced HTML content
+     */
+    protected function mediaplugin_div_callback(array $match): string {
+        $hasuseraccepted = $this->get_hasuseraccepted();
+        $styles = $this->get_style_attributs();
+
+        // Video ID is at index 3 in the regex pattern.
+        if (empty($match[3])) {
+            // Fallback: return original match if we can't extract the video ID.
+            return $match[0];
+        }
+
+        $vid = $match[3];
+        $params = [];
+
+        // Try to extract the complete URL with query parameters from the match.
+        // The URL can be in various formats within the src attribute or JSON src property.
+        // Match everything between src=&quot; or src&quot;:&quot; and closing &quot;, including &amp; encoded parameters.
+        if (preg_match('/src(?:=|&quot;:)&quot;(https?:\/\/[^"]+?)&quot;/', $match[0], $srcmatch)) {
+            // Decode HTML entities (&quot; -> ", &amp; -> &) to get proper URL.
+            $url = html_entity_decode($srcmatch[1], ENT_QUOTES | ENT_HTML5);
+            $params = parse_url($url);
+        } else if (!empty($match[4])) {
+            // Fallback: use captured query string from regex (index 4).
+            $querystring = html_entity_decode($match[4], ENT_QUOTES | ENT_HTML5);
+            if (!empty($querystring)) {
+                // Remove leading '?' or '&' if present.
+                $querystring = ltrim($querystring, '?&');
+                $params['query'] = $querystring;
+            }
+        }
+
+        $urlparam = self::build_url_querystring($params);
+        array_push($this->youtubevideoids, $vid);
+        $wrapper = $this->render_two_click_version_youtube($vid, $hasuseraccepted, $urlparam['paramarr'], $styles);
+
+        return $wrapper;
+    }
+
+    /**
      * Callback to set a YouTube url to match DSGVO.
      *
      * @param array $match
@@ -160,19 +219,46 @@ class text_filter extends \core_filters\text_filter {
         $hasuseraccepted = $this->get_hasuseraccepted();
         $styles = $this->get_style_attributs();
 
-        // The following arrays containing all possible offset of the $match array.
-        $videoffsets = [10, 21, 30, 41, 51];
-        $urloffsets = [4, 15, 26, 35, 46];
+        $vid = null;
+        $params = [];
 
-        foreach ($videoffsets as $videoffset) {
-            if (isset($match[$videoffset])) {
-                $vid = $match[$videoffset];
+        // Extract video ID and URL from the match array
+        // Corrected pattern indices after recounting all capture groups:
+        // Pattern 1: <video> tag with /watch?v= - video ID at index 9, URL at index 3
+        // Pattern 2: <iframe> with /embed/ - video ID at index 16, URL at index 12
+        // Pattern 3: <iframe> with /watch?v= - video ID at index 24, URL at index 19
+        // Pattern 4: <a> tag with /watch?v= - video ID at index 33, URL at index 27
+        // Pattern 5: <a> tag with /embed/ - video ID at index 42, URL at index 36
+        // Pattern 6: Plain URL with /watch?v= - video ID at index 49, URL at index 44
+        // Pattern 7: Plain URL with /embed/ - video ID at index 56, URL at index 51
+
+        $patterns = [
+            ['vidIdx' => 9, 'urlIdx' => 3],    // video tag
+            ['vidIdx' => 16, 'urlIdx' => 12],  // iframe with /embed/
+            ['vidIdx' => 24, 'urlIdx' => 19],  // iframe with /watch?v=
+            ['vidIdx' => 33, 'urlIdx' => 27],  // a tag with /watch?v=
+            ['vidIdx' => 42, 'urlIdx' => 36],  // a tag with /embed/
+            ['vidIdx' => 49, 'urlIdx' => 44],  // plain URL with /watch?v=
+            ['vidIdx' => 56, 'urlIdx' => 51],  // plain URL with /embed/
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (isset($match[$pattern['vidIdx']]) && !empty($match[$pattern['vidIdx']])) {
+                $vid = $match[$pattern['vidIdx']];
+                if (isset($match[$pattern['urlIdx']]) && !empty($match[$pattern['urlIdx']])) {
+                    $params = parse_url($match[$pattern['urlIdx']]);
+                }
+                break;
             }
         }
-        foreach ($urloffsets as $urloffset) {
-            if (isset($match[$urloffset])) {
-                $params = parse_url($match[$urloffset]);
-            }
+
+        if (empty($vid)) {
+            // Fallback: return original match if we can't extract the video ID
+            return $match[0];
+        }
+
+        if (empty($params)) {
+            $params = [];
         }
 
         $urlparam = self::build_url_querystring($params);
@@ -191,25 +277,46 @@ class text_filter extends \core_filters\text_filter {
     protected function youtube_shorturl_callback(array $match): string {
 
         $hasuseraccepted = $this->get_hasuseraccepted();
-
         $styles = $this->get_style_attributs();
 
-        // The order of the if clauses has to be the same as the order of the regex commands.
-        if (is_string($match[6]) && strlen($match[6]) > 1) {
-            $vid = $match[6];
-            $params = parse_url($match[4]);
-        } else if (is_string($match[12]) && strlen($match[12]) > 1) {
-            $vid = $match[12];
-            $params = parse_url($match[10]);
-        } else if (is_string($match[16]) && strlen($match[16]) > 1) {
-            $vid = $match[16];
-            $params = parse_url($match[14]);
+        $vid = null;
+        $params = [];
+
+        // Pattern group indices for short URLs:
+        // Group 2: <a> tag, URL at index 3, video ID at index 5
+        // Group 7: <video> tag, URL at index 8, video ID at index 10
+        // Group 12: Plain URL, URL at index 12, video ID at index 15
+
+        $patterns = [
+            ['vidIdx' => 5, 'urlIdx' => 3],   // a tag
+            ['vidIdx' => 10, 'urlIdx' => 8],   // video tag
+            ['vidIdx' => 15, 'urlIdx' => 12],  // plain URL
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (!empty($match[$pattern['vidIdx']])) {
+                $vid = $match[$pattern['vidIdx']];
+                if (!empty($match[$pattern['urlIdx']])) {
+                    $params = parse_url($match[$pattern['urlIdx']]);
+                }
+                break;
+            }
         }
+
+        if (empty($vid)) {
+            // Fallback: return original match if we can't extract the data
+            return $match[0];
+        }
+
+        if (empty($params)) {
+            $params = [];
+        }
+
+
         $urlparam = self::build_url_querystring($params);
-
         array_push($this->youtubevideoids, $vid);
-
         $ytwrapper = $this->render_two_click_version_youtube($vid, $hasuseraccepted, $urlparam['paramarr'], $styles);
+
         return $ytwrapper;
     }
 
@@ -219,6 +326,7 @@ class text_filter extends \core_filters\text_filter {
      * @param string $videoid
      * @param bool $hasuseraccepted True if provider (YouTube) is accepted
      * @param array $urlparam Contains all parameters to post to iframe.
+
      * @param string $styles
      * @return string HTML markup
      */

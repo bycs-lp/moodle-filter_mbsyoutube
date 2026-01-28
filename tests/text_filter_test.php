@@ -491,5 +491,197 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringContainsString($expected6, $filtered);
         $this->assertStringContainsString($expected7, $filtered);
         $this->assertStringContainsString($expected8, $filtered);
+
+        // Testcase: Plain YouTube URLs without any HTML wrapper (no <a>, <iframe>, <video> tags).
+        // These are raw URLs directly in text, not embedded in any HTML element.
+        $expected = '<div class="mbsyoutube-twoclickwarning-boxtext">'
+        . '<strong>Data protection notice</strong>';
+        $expected2 = '{"modestbranding":1,"iv_load_policy":3,"enablejsapi":1,"origin":"' . $CFG->wwwroot .'"}';
+        $expected3 = 'id="yt___phpunit___PlainTextId"';
+
+        // Plain watch URL without HTML wrapper.
+        $youtube = 'Check out this video: https://www.youtube.com/watch?v=PlainTextId and let me know!';
+        $filtered = $filter->filter($youtube);
+        $this->assertStringContainsString($expected, $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringContainsString($expected3, $filtered);
+        $this->assertStringContainsString('Check out this video:', $filtered);
+        $this->assertStringContainsString('and let me know!', $filtered);
+
+        // Plain embed URL without HTML wrapper.
+        $youtube = 'Embedded: https://www.youtube.com/embed/PlainTextId - enjoy!';
+        $filtered = $filter->filter($youtube);
+        $this->assertStringContainsString($expected, $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringContainsString($expected3, $filtered);
+        $this->assertStringContainsString('Embedded:', $filtered);
+        $this->assertStringContainsString('- enjoy!', $filtered);
+
+        // Plain short URL without HTML wrapper.
+        $youtube = 'Short link: https://youtu.be/PlainTextId here!';
+        $filtered = $filter->filter($youtube);
+        $this->assertStringContainsString($expected, $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringContainsString($expected3, $filtered);
+        $this->assertStringContainsString('Short link:', $filtered);
+        $this->assertStringContainsString('here!', $filtered);
+
+        // Plain nocookie URL without HTML wrapper.
+        $youtube = 'Privacy-friendly: https://www.youtube-nocookie.com/watch?v=PlainTextId done.';
+        $filtered = $filter->filter($youtube);
+        $this->assertStringContainsString($expected, $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringContainsString($expected3, $filtered);
+        $this->assertStringContainsString('Privacy-friendly:', $filtered);
+        $this->assertStringContainsString('done.', $filtered);
+
+        // Multiple plain URLs in one text without HTML.
+        $expected4 = 'id="yt___phpunit___SecondVidId"';
+        $expected5 = '{"modestbranding":1,"iv_load_policy":3,'
+        . '"enablejsapi":1,"origin":"' . $CFG->wwwroot . '","start":"30"}';
+        $youtube = 'First video: https://www.youtube.com/watch?v=PlainTextId and second: https://youtu.be/SecondVidId?t=30 end.';
+        $filtered = $filter->filter($youtube);
+        $this->assertStringContainsString($expected, $filtered);
+        $this->assertStringContainsString($expected3, $filtered);
+        $this->assertStringContainsString($expected4, $filtered);
+        $this->assertStringContainsString($expected5, $filtered);
+        $this->assertStringContainsString('First video:', $filtered);
+        $this->assertStringContainsString('and second:', $filtered);
+        $this->assertStringContainsString('end.', $filtered);
+
+        // Testcase: YouTube short URL in an <a> tag with external-media-provider class.
+        // The URL appears both in href attribute and as visible link text.
+        // This tests that the <a> tag is replaced with the two-click wrapper.
+        $youtube = '<p><a class="external-media-provider" href="https://youtu.be/K_xleuYgL_4?si=N_Euj21A_IG1EClu">'
+            . ' https://youtu.be/K_xleuYgL_4?si=N_Euj21A_IG1EClu </a></p>';
+        $filtered = $filter->filter($youtube);
+
+        // Verify the two-click wrapper was generated.
+        $this->assertStringContainsString('id="yt___phpunit___K_xleuYgL_4"', $filtered);
+        $this->assertStringContainsString('mbsyoutube-twoclickwarning-boxtext', $filtered);
+
+        // Verify the original <a> tag was completely replaced (not present anymore).
+        $this->assertStringNotContainsString('<a class="external-media-provider"', $filtered);
+        $this->assertStringNotContainsString('href="https://youtu.be/K_xleuYgL_4', $filtered);
+
+        // Verify surrounding <p> tags are preserved.
+        $this->assertStringStartsWith('<p>', $filtered);
+        $this->assertStringEndsWith('</p>', $filtered);
+
+        // Testcase: mediaplugin_videojs wrapped YouTube video.
+        $originalhtml = '<p><a class="external-media-provider" href="https://youtu.be/K_xleuYgL_4?si=N_Euj21A_IG1EClu">'
+            . 'https://youtu.be/K_xleuYgL_4?si=N_Euj21A_IG1EClu</a></p>';
+        $mediapluginfilter = new \filter_mediaplugin\text_filter($context, []);
+        $youtube = $mediapluginfilter->filter($originalhtml);
+        // The entire div wrapper with nested video element should be replaced.
+        $filtered = $filter->filter($youtube);
+
+        // Verify the two-click wrapper was generated with correct video ID.
+        $this->assertStringContainsString('id="yt___phpunit___K_xleuYgL_4"', $filtered);
+        $this->assertStringContainsString('mbsyoutube-twoclickwarning-boxtext', $filtered);
+
+        // Verify the original mediaplugin div wrapper was completely replaced (not present anymore).
+        $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
+        $this->assertStringNotContainsString('data-setup-lazy', $filtered);
+        $this->assertStringNotContainsString('class="video-js"', $filtered);
+
+        // Verify surrounding <p> tags are preserved.
+        $this->assertStringStartsWith('<p>', $filtered);
+        $this->assertStringEndsWith('</p>', $filtered);
+
+        // Testcase: mediaplugin_videojs with youtube.com/watch URL (standard format).
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube.com/watch?v=TestVidId1">'
+            . 'https://www.youtube.com/watch?v=TestVidId1</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
+        $filtered = $filter->filter($youtube);
+
+        $this->assertStringContainsString('id="yt___phpunit___TestVidId1"', $filtered);
+        $this->assertStringContainsString('mbsyoutube-twoclickwarning-boxtext', $filtered);
+        $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
+        $this->assertStringNotContainsString('data-setup-lazy', $filtered);
+
+        // Testcase: mediaplugin_videojs with youtube.com/embed URL.
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube.com/embed/TestVidId2">'
+            . 'https://www.youtube.com/embed/TestVidId2</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
+        $filtered = $filter->filter($youtube);
+
+        $this->assertStringContainsString('id="yt___phpunit___TestVidId2"', $filtered);
+        $this->assertStringContainsString('mbsyoutube-twoclickwarning-boxtext', $filtered);
+        $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
+
+        // Testcase: mediaplugin_videojs with youtube-nocookie.com URL.
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube-nocookie.com/embed/TestVidId3">'
+            . 'https://www.youtube-nocookie.com/embed/TestVidId3</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
+        $filtered = $filter->filter($youtube);
+
+        $this->assertStringContainsString('id="yt___phpunit___TestVidId3"', $filtered);
+        $this->assertStringContainsString('mbsyoutube-twoclickwarning-boxtext', $filtered);
+        $this->assertStringNotContainsString('youtube-nocookie', $filtered);
+
+        // Testcase: mediaplugin_videojs with youtube-nocookie.com/watch URL.
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube-nocookie.com/watch?v=TestVidId4">'
+            . 'https://www.youtube-nocookie.com/watch?v=TestVidId4</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
+        $filtered = $filter->filter($youtube);
+
+        $this->assertStringContainsString('id="yt___phpunit___TestVidId4"', $filtered);
+        $this->assertStringContainsString('mbsyoutube-twoclickwarning-boxtext', $filtered);
+        $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
+        $this->assertStringNotContainsString('youtube-nocookie', $filtered);
+
+        // Testcase: mediaplugin_videojs with youtu.be URL and start parameter (t=30).
+        $originalhtml = '<p><a class="external-media-provider" href="https://youtu.be/TestVidId5?t=30">'
+            . 'https://youtu.be/TestVidId5?t=30</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
+        $expected2 = '{"modestbranding":1,"iv_load_policy":3,'
+        . '"enablejsapi":1,"origin":"' . $CFG->wwwroot . '","start":"30"}';
+        $filtered = $filter->filter($youtube);
+
+        $this->assertStringContainsString('id="yt___phpunit___TestVidId5"', $filtered);
+        $this->assertStringContainsString('mbsyoutube-twoclickwarning-boxtext', $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
+
+        // Testcase: mediaplugin_videojs with youtube.com/watch URL and start parameter.
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube.com/watch?v=TestVidId6&start=45">'
+            . 'https://www.youtube.com/watch?v=TestVidId6&start=45</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
+        $expected2 = '{"modestbranding":1,"iv_load_policy":3,'
+        . '"enablejsapi":1,"origin":"' . $CFG->wwwroot . '","start":"45"}';
+        $filtered = $filter->filter($youtube);
+
+        $this->assertStringContainsString('id="yt___phpunit___TestVidId6"', $filtered);
+        $this->assertStringContainsString('mbsyoutube-twoclickwarning-boxtext', $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
+
+        // Testcase: mediaplugin_videojs with youtube.com/embed URL and start+end parameters.
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube.com/embed/TestVidId7?start=10&end=60">'
+            . 'https://www.youtube.com/embed/TestVidId7?start=10&end=60</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
+        $expected2 = '{"modestbranding":1,"iv_load_policy":3,'
+        . '"enablejsapi":1,"origin":"' . $CFG->wwwroot . '","start":"10","end":"60"}';
+        $filtered = $filter->filter($youtube);
+
+        $this->assertStringContainsString('id="yt___phpunit___TestVidId7"', $filtered);
+        $this->assertStringContainsString('mbsyoutube-twoclickwarning-boxtext', $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
+
+        // Testcase: mediaplugin_videojs with youtube-nocookie.com/embed URL and end parameter.
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube-nocookie.com/embed/TestVidId8?end=120">'
+            . 'https://www.youtube-nocookie.com/embed/TestVidId8?end=120</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
+        $expected2 = '{"modestbranding":1,"iv_load_policy":3,'
+        . '"enablejsapi":1,"origin":"' . $CFG->wwwroot . '","end":"120"}';
+        $filtered = $filter->filter($youtube);
+
+        $this->assertStringContainsString('id="yt___phpunit___TestVidId8"', $filtered);
+        $this->assertStringContainsString('mbsyoutube-twoclickwarning-boxtext', $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
+        $this->assertStringNotContainsString('youtube-nocookie', $filtered);
     }
 }
