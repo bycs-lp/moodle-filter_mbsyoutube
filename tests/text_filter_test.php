@@ -491,5 +491,62 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringContainsString($expected6, $filtered);
         $this->assertStringContainsString($expected7, $filtered);
         $this->assertStringContainsString($expected8, $filtered);
+
+        // Testcase: Plain YouTube URLs without any HTML wrapper (no <a>, <iframe>, <video> tags).
+        // These are raw URLs directly in text, not embedded in any HTML element.
+        $expected = '<div class="mbsyoutube-twoclickwarning-boxtext">'
+        . '<strong>Data protection notice</strong>';
+        $expected2 = '{"modestbranding":1,"iv_load_policy":3,"enablejsapi":1,"origin":"' . $CFG->wwwroot .'"}';
+        $expected3 = 'id="yt___phpunit___PlainTextId"';
+
+        // Plain watch URL without HTML wrapper.
+        $youtube = 'Check out this video: https://www.youtube.com/watch?v=PlainTextId and let me know!';
+        $filtered = $filter->filter($youtube);
+        $this->assertStringContainsString($expected, $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringContainsString($expected3, $filtered);
+        $this->assertStringContainsString('Check out this video:', $filtered);
+        $this->assertStringContainsString('and let me know!', $filtered);
+
+        // Plain embed URL without HTML wrapper.
+        $youtube = 'Embedded: https://www.youtube.com/embed/PlainTextId - enjoy!';
+        $filtered = $filter->filter($youtube);
+        $this->assertStringContainsString($expected, $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringContainsString($expected3, $filtered);
+        $this->assertStringContainsString('Embedded:', $filtered);
+        $this->assertStringContainsString('- enjoy!', $filtered);
+
+        // Plain short URL without HTML wrapper.
+        $youtube = 'Short link: https://youtu.be/PlainTextId here!';
+        $filtered = $filter->filter($youtube);
+        $this->assertStringContainsString($expected, $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringContainsString($expected3, $filtered);
+        $this->assertStringContainsString('Short link:', $filtered);
+        $this->assertStringContainsString('here!', $filtered);
+
+        // Plain nocookie URL without HTML wrapper.
+        $youtube = 'Privacy-friendly: https://www.youtube-nocookie.com/watch?v=PlainTextId done.';
+        $filtered = $filter->filter($youtube);
+        $this->assertStringContainsString($expected, $filtered);
+        $this->assertStringContainsString($expected2, $filtered);
+        $this->assertStringContainsString($expected3, $filtered);
+        $this->assertStringContainsString('Privacy-friendly:', $filtered);
+        $this->assertStringContainsString('done.', $filtered);
+
+        // Multiple plain URLs in one text without HTML.
+        $expected4 = 'id="yt___phpunit___SecondVidId"';
+        $expected5 = '{"modestbranding":1,"iv_load_policy":3,'
+        . '"enablejsapi":1,"origin":"' . $CFG->wwwroot . '","start":"30"}';
+        $youtube = 'First video: https://www.youtube.com/watch?v=PlainTextId and second: https://youtu.be/SecondVidId?t=30 end.';
+        $filtered = $filter->filter($youtube);
+        $this->assertStringContainsString($expected, $filtered);
+        $this->assertStringContainsString($expected3, $filtered);
+        $this->assertStringContainsString($expected4, $filtered);
+        $this->assertStringContainsString($expected5, $filtered);
+        $this->assertStringContainsString('First video:', $filtered);
+        $this->assertStringContainsString('and second:', $filtered);
+        $this->assertStringContainsString('end.', $filtered);
     }
 }

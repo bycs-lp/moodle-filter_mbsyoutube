@@ -82,6 +82,7 @@ class text_filter extends \core_filters\text_filter {
         }
 
         // When adding a new regex command, there must be added a new if clause in the callback function, too.
+        // Note: Plain URL patterns use negative lookbehind to avoid matching URLs already in HTML attributes.
         $regexyoutube = '/('
             . '(<video[^>]+><source[^>]*src="(((http|https):\/\/){0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)'
             . '(\/watch\?v=)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>[^<]*<\/video>)'
@@ -93,10 +94,15 @@ class text_filter extends \core_filters\text_filter {
             . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>[^<]+<\/a>)'
             . '|(<a[^>]*href="(((http|https):\/\/){0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)(\/embed\/)'
             . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>[^<]+<\/a>)'
+            // Plain URL patterns (not inside HTML tags).
+            . '|(?<!["\'])((https?:\/\/)(www\.youtube(-nocookie)?\.com)(\/watch\?v=)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]*)?)'
+            . '|(?<!["\'])((https?:\/\/)(www\.youtube(-nocookie)?\.com)(\/embed\/)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]*)?)'
             . ')/';
         $regexyoutubeshorturl = '/('
             . '(<a[^>]*href="((http|https):\/\/youtu\.be\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]+)?)"[^>]*>[^<]+<\/a>)'
             . '|(<video[^>]+><source[^>]*src="((http|https):\/\/youtu\.be\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]+)?)"[^>]*>[^<]*<\/video>)'
+            // Plain short URL pattern (not inside HTML tags).
+            . '|(?<!["\'])((https?:\/\/)(youtu\.be)\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]*)?)'
             . ')/';
 
         $patternsandcallbacks = [
@@ -168,6 +174,8 @@ class text_filter extends \core_filters\text_filter {
         // Pattern 3: <iframe> with /watch?v= - video ID at index 24, URL at index 19
         // Pattern 4: <a> tag with /watch?v= - video ID at index 33, URL at index 27
         // Pattern 5: <a> tag with /embed/ - video ID at index 42, URL at index 36
+        // Pattern 6: Plain URL with /watch?v= - video ID at index 49, URL at index 44
+        // Pattern 7: Plain URL with /embed/ - video ID at index 56, URL at index 51
 
         $patterns = [
             ['vidIdx' => 9, 'urlIdx' => 3],    // video tag
@@ -175,6 +183,8 @@ class text_filter extends \core_filters\text_filter {
             ['vidIdx' => 24, 'urlIdx' => 19],  // iframe with /watch?v=
             ['vidIdx' => 33, 'urlIdx' => 27],  // a tag with /watch?v=
             ['vidIdx' => 42, 'urlIdx' => 36],  // a tag with /embed/
+            ['vidIdx' => 49, 'urlIdx' => 44],  // plain URL with /watch?v=
+            ['vidIdx' => 56, 'urlIdx' => 51],  // plain URL with /embed/
         ];
 
         foreach ($patterns as $pattern) {
@@ -220,10 +230,12 @@ class text_filter extends \core_filters\text_filter {
         // Pattern group indices for short URLs:
         // Group 2: <a> tag, URL at index 3, video ID at index 5
         // Group 7: <video> tag, URL at index 8, video ID at index 10
+        // Group 12: Plain URL, URL at index 12, video ID at index 15
 
         $patterns = [
             ['vidIdx' => 5, 'urlIdx' => 3],   // a tag
             ['vidIdx' => 10, 'urlIdx' => 8],   // video tag
+            ['vidIdx' => 15, 'urlIdx' => 12],  // plain URL
         ];
 
         foreach ($patterns as $pattern) {
