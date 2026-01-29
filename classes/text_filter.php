@@ -81,8 +81,19 @@ class text_filter extends \core_filters\text_filter {
             return $text;
         }
 
-        // When adding a new regex command, there must be added a new if clause in the callback function, too.
-        // Note: Plain URL patterns use negative lookbehind to avoid matching URLs already in HTML attributes.
+        // Pattern for mediaplugin_videojs wrapped YouTube videos.
+        // This must come first to match the complete wrapper before matching inner elements.
+        // Matches complete div wrapper and captures the full YouTube URL with parameters.
+        $regexmediaplugindiv = '/('
+            . '(<div[^>]*class="[^"]*mediaplugin[^"]*"[^>]*>.*?'
+            . '<video[^>]*>.*?'
+            . '(?:https?:\/\/)?(?:www\.)?(?:'
+            . 'youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/)'
+            . '|youtu\.be\/'
+            . ')([\w\d\-_]+)([^"&]*)'
+            . '.*?<\/video>.*?<\/div>)'
+            . ')/s';
+
         $regexyoutube = '/('
             . '(<video[^>]+><source[^>]*src="(((http|https):\/\/){0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)'
             . '(\/watch\?v=)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>[^<]*<\/video>)'
@@ -106,8 +117,9 @@ class text_filter extends \core_filters\text_filter {
             . ')/';
 
         $patternsandcallbacks = [
-            $regexyoutube => "\\filter_mbsyoutube\\text_filter::youtube_callback",
-            $regexyoutubeshorturl => "\\filter_mbsyoutube\\text_filter::youtube_shorturl_callback",
+            $regexmediaplugindiv => [$this, 'mediaplugin_div_callback'],
+            $regexyoutube => [$this, 'youtube_callback'],
+            $regexyoutubeshorturl => [$this, 'youtube_shorturl_callback'],
         ];
 
         $newtext = preg_replace_callback_array(
@@ -152,6 +164,49 @@ class text_filter extends \core_filters\text_filter {
         $courseid = $this->courseid;
         $cache = cache::make('filter_mbsyoutube', 'mbsexternalsourceaccept');
         return $cache->get($USER->id . "_" . $courseid . "_YouTube");
+    }
+
+    /**
+     * Callback to replace mediaplugin_videojs div wrapper with DSGVO conform style.
+     *
+     * @param array $match Regex match array
+     * @return string Replaced HTML content
+     */
+    protected function mediaplugin_div_callback(array $match): string {
+        $hasuseraccepted = $this->get_hasuseraccepted();
+        $styles = $this->get_style_attributs();
+
+        // Video ID is at index 3 in the regex pattern.
+        if (empty($match[3])) {
+            // Fallback: return original match if we can't extract the video ID.
+            return $match[0];
+        }
+
+        $vid = $match[3];
+        $params = [];
+
+        // Try to extract the complete URL with query parameters from the match.
+        // The URL can be in various formats within the src attribute or JSON src property.
+        // Match everything between src=&quot; or src&quot;:&quot; and closing &quot;, including &amp; encoded parameters.
+        if (preg_match('/src(?:=|&quot;:)&quot;(https?:\/\/[^"]+?)&quot;/', $match[0], $srcmatch)) {
+            // Decode HTML entities (&quot; -> ", &amp; -> &) to get proper URL.
+            $url = html_entity_decode($srcmatch[1], ENT_QUOTES | ENT_HTML5);
+            $params = parse_url($url);
+        } else if (!empty($match[4])) {
+            // Fallback: use captured query string from regex (index 4).
+            $querystring = html_entity_decode($match[4], ENT_QUOTES | ENT_HTML5);
+            if (!empty($querystring)) {
+                // Remove leading '?' or '&' if present.
+                $querystring = ltrim($querystring, '?&');
+                $params['query'] = $querystring;
+            }
+        }
+
+        $urlparam = self::build_url_querystring($params);
+        array_push($this->youtubevideoids, $vid);
+        $wrapper = $this->render_two_click_version_youtube($vid, $hasuseraccepted, $urlparam['paramarr'], $styles);
+
+        return $wrapper;
     }
 
     /**
