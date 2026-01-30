@@ -569,15 +569,11 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringEndsWith('</p>', $filtered);
 
         // Testcase: mediaplugin_videojs wrapped YouTube video.
+        $originalhtml = '<p><a class="external-media-provider" href="https://youtu.be/K_xleuYgL_4?si=N_Euj21A_IG1EClu">'
+            . 'https://youtu.be/K_xleuYgL_4?si=N_Euj21A_IG1EClu</a></p>';
+        $mediapluginfilter = new \filter_mediaplugin\text_filter($context, []);
+        $youtube = $mediapluginfilter->filter($originalhtml);
         // The entire div wrapper with nested video element should be replaced.
-        $youtube = '<p><div class="mediaplugin mediaplugin_videojs d-block"><div style="max-width:640px;">'
-            . '<video data-setup-lazy="{&quot;techOrder&quot;: [&quot;youtube&quot;], &quot;sources&quot;: '
-            . '[{&quot;type&quot;: &quot;video/youtube&quot;, &quot;src&quot;:&quot;https://youtu.be/K_xleuYgL_4'
-            . '?si=N_Euj21A_IG1EClu&quot;}], &quot;language&quot;: &quot;en&quot;, &quot;fluid&quot;: true, '
-            . '&quot;playbackRates&quot;: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], &quot;userActions&quot;: '
-            . '{&quot;hotkeys&quot;: true}}" id="id_videojs_697b6632bb39a_1" class="video-js" preload="auto" '
-            . 'controls="true" title="K_xleuYgL_4"><a class="mediafallbacklink" '
-            . 'href="https://youtu.be/K_xleuYgL_4?si=N_Euj21A_IG1EClu">K_xleuYgL_4</a></video></div></div></p>';
         $filtered = $filter->filter($youtube);
 
         // Verify the two-click wrapper was generated with correct video ID.
@@ -594,12 +590,9 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringEndsWith('</p>', $filtered);
 
         // Testcase: mediaplugin_videojs with youtube.com/watch URL (standard format).
-        $youtube = '<p><div class="mediaplugin mediaplugin_videojs d-block"><div style="max-width:640px;">'
-            . '<video data-setup-lazy="{&quot;techOrder&quot;: [&quot;youtube&quot;], &quot;sources&quot;: '
-            . '[{&quot;type&quot;: &quot;video/youtube&quot;, &quot;src&quot;:&quot;https://www.youtube.com/watch?v=TestVidId1'
-            . '&quot;}]}" class="video-js" preload="auto" '
-            . 'controls="true"><a class="mediafallbacklink" '
-            . 'href="https://www.youtube.com/watch?v=TestVidId1">TestVidId1</a></video></div></div></p>';
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube.com/watch?v=TestVidId1">'
+            . 'https://www.youtube.com/watch?v=TestVidId1</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
         $filtered = $filter->filter($youtube);
 
         $this->assertStringContainsString('id="yt___phpunit___TestVidId1"', $filtered);
@@ -608,12 +601,9 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringNotContainsString('data-setup-lazy', $filtered);
 
         // Testcase: mediaplugin_videojs with youtube.com/embed URL.
-        $youtube = '<p><div class="mediaplugin mediaplugin_videojs d-block"><div style="max-width:640px;">'
-            . '<video data-setup-lazy="{&quot;techOrder&quot;: [&quot;youtube&quot;], &quot;sources&quot;: '
-            . '[{&quot;type&quot;: &quot;video/youtube&quot;, &quot;src&quot;:&quot;https://www.youtube.com/embed/TestVidId2'
-            . '&quot;}]}" class="video-js" preload="auto" '
-            . 'controls="true"><a class="mediafallbacklink" '
-            . 'href="https://www.youtube.com/embed/TestVidId2">TestVidId2</a></video></div></div></p>';
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube.com/embed/TestVidId2">'
+            . 'https://www.youtube.com/embed/TestVidId2</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
         $filtered = $filter->filter($youtube);
 
         $this->assertStringContainsString('id="yt___phpunit___TestVidId2"', $filtered);
@@ -621,12 +611,9 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
 
         // Testcase: mediaplugin_videojs with youtube-nocookie.com URL.
-        $youtube = '<p><div class="mediaplugin mediaplugin_videojs d-block"><div style="max-width:640px;">'
-            . '<video data-setup-lazy="{&quot;techOrder&quot;: [&quot;youtube&quot;], &quot;sources&quot;: '
-            . '[{&quot;type&quot;: &quot;video/youtube&quot;, &quot;src&quot;:&quot;https://www.youtube-nocookie.com/embed/TestVidId3'
-            . '&quot;}]}" class="video-js" preload="auto" '
-            . 'controls="true"><a class="mediafallbacklink" '
-            . 'href="https://www.youtube-nocookie.com/embed/TestVidId3">TestVidId3</a></video></div></div></p>';
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube-nocookie.com/embed/TestVidId3">'
+            . 'https://www.youtube-nocookie.com/embed/TestVidId3</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
         $filtered = $filter->filter($youtube);
 
         $this->assertStringContainsString('id="yt___phpunit___TestVidId3"', $filtered);
@@ -634,12 +621,9 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringNotContainsString('youtube-nocookie', $filtered);
 
         // Testcase: mediaplugin_videojs with youtube-nocookie.com/watch URL.
-        $youtube = '<p><div class="mediaplugin mediaplugin_videojs d-block"><div style="max-width:640px;">'
-            . '<video data-setup-lazy="{&quot;techOrder&quot;: [&quot;youtube&quot;], &quot;sources&quot;: '
-            . '[{&quot;type&quot;: &quot;video/youtube&quot;, &quot;src&quot;:&quot;https://www.youtube-nocookie.com/watch?v=TestVidId4'
-            . '&quot;}]}" class="video-js" preload="auto" '
-            . 'controls="true"><a class="mediafallbacklink" '
-            . 'href="https://www.youtube-nocookie.com/watch?v=TestVidId4">TestVidId4</a></video></div></div></p>';
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube-nocookie.com/watch?v=TestVidId4">'
+            . 'https://www.youtube-nocookie.com/watch?v=TestVidId4</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
         $filtered = $filter->filter($youtube);
 
         $this->assertStringContainsString('id="yt___phpunit___TestVidId4"', $filtered);
@@ -648,14 +632,11 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringNotContainsString('youtube-nocookie', $filtered);
 
         // Testcase: mediaplugin_videojs with youtu.be URL and start parameter (t=30).
+        $originalhtml = '<p><a class="external-media-provider" href="https://youtu.be/TestVidId5?t=30">'
+            . 'https://youtu.be/TestVidId5?t=30</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
         $expected2 = '{"modestbranding":1,"iv_load_policy":3,'
         . '"enablejsapi":1,"origin":"' . $CFG->wwwroot . '","start":"30"}';
-        $youtube = '<p><div class="mediaplugin mediaplugin_videojs d-block"><div style="max-width:640px;">'
-            . '<video data-setup-lazy="{&quot;techOrder&quot;: [&quot;youtube&quot;], &quot;sources&quot;: '
-            . '[{&quot;type&quot;: &quot;video/youtube&quot;, &quot;src&quot;:&quot;https://youtu.be/TestVidId5'
-            . '?t=30&quot;}]}" class="video-js" preload="auto" '
-            . 'controls="true"><a class="mediafallbacklink" '
-            . 'href="https://youtu.be/TestVidId5?t=30">TestVidId5</a></video></div></div></p>';
         $filtered = $filter->filter($youtube);
 
         $this->assertStringContainsString('id="yt___phpunit___TestVidId5"', $filtered);
@@ -664,14 +645,11 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
 
         // Testcase: mediaplugin_videojs with youtube.com/watch URL and start parameter.
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube.com/watch?v=TestVidId6&start=45">'
+            . 'https://www.youtube.com/watch?v=TestVidId6&start=45</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
         $expected2 = '{"modestbranding":1,"iv_load_policy":3,'
         . '"enablejsapi":1,"origin":"' . $CFG->wwwroot . '","start":"45"}';
-        $youtube = '<p><div class="mediaplugin mediaplugin_videojs d-block"><div style="max-width:640px;">'
-            . '<video data-setup-lazy="{&quot;techOrder&quot;: [&quot;youtube&quot;], &quot;sources&quot;: '
-            . '[{&quot;type&quot;: &quot;video/youtube&quot;, &quot;src&quot;:&quot;https://www.youtube.com/watch?v=TestVidId6'
-            . '&amp;start=45&quot;}]}" class="video-js" preload="auto" '
-            . 'controls="true"><a class="mediafallbacklink" '
-            . 'href="https://www.youtube.com/watch?v=TestVidId6&start=45">TestVidId6</a></video></div></div></p>';
         $filtered = $filter->filter($youtube);
 
         $this->assertStringContainsString('id="yt___phpunit___TestVidId6"', $filtered);
@@ -680,14 +658,11 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
 
         // Testcase: mediaplugin_videojs with youtube.com/embed URL and start+end parameters.
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube.com/embed/TestVidId7?start=10&end=60">'
+            . 'https://www.youtube.com/embed/TestVidId7?start=10&end=60</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
         $expected2 = '{"modestbranding":1,"iv_load_policy":3,'
         . '"enablejsapi":1,"origin":"' . $CFG->wwwroot . '","start":"10","end":"60"}';
-        $youtube = '<p><div class="mediaplugin mediaplugin_videojs d-block"><div style="max-width:640px;">'
-            . '<video data-setup-lazy="{&quot;techOrder&quot;: [&quot;youtube&quot;], &quot;sources&quot;: '
-            . '[{&quot;type&quot;: &quot;video/youtube&quot;, &quot;src&quot;:&quot;https://www.youtube.com/embed/TestVidId7'
-            . '?start=10&amp;end=60&quot;}]}" class="video-js" preload="auto" '
-            . 'controls="true"><a class="mediafallbacklink" '
-            . 'href="https://www.youtube.com/embed/TestVidId7?start=10&end=60">TestVidId7</a></video></div></div></p>';
         $filtered = $filter->filter($youtube);
 
         $this->assertStringContainsString('id="yt___phpunit___TestVidId7"', $filtered);
@@ -696,14 +671,11 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
 
         // Testcase: mediaplugin_videojs with youtube-nocookie.com/embed URL and end parameter.
+        $originalhtml = '<p><a class="external-media-provider" href="https://www.youtube-nocookie.com/embed/TestVidId8?end=120">'
+            . 'https://www.youtube-nocookie.com/embed/TestVidId8?end=120</a></p>';
+        $youtube = $mediapluginfilter->filter($originalhtml);
         $expected2 = '{"modestbranding":1,"iv_load_policy":3,'
         . '"enablejsapi":1,"origin":"' . $CFG->wwwroot . '","end":"120"}';
-        $youtube = '<p><div class="mediaplugin mediaplugin_videojs d-block"><div style="max-width:640px;">'
-            . '<video data-setup-lazy="{&quot;techOrder&quot;: [&quot;youtube&quot;], &quot;sources&quot;: '
-            . '[{&quot;type&quot;: &quot;video/youtube&quot;, &quot;src&quot;:&quot;https://www.youtube-nocookie.com/embed/TestVidId8'
-            . '?end=120&quot;}]}" class="video-js" preload="auto" '
-            . 'controls="true"><a class="mediafallbacklink" '
-            . 'href="https://www.youtube-nocookie.com/embed/TestVidId8?end=120">TestVidId8</a></video></div></div></p>';
         $filtered = $filter->filter($youtube);
 
         $this->assertStringContainsString('id="yt___phpunit___TestVidId8"', $filtered);
