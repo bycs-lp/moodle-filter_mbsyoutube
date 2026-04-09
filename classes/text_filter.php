@@ -96,7 +96,7 @@ class text_filter extends \core_filters\text_filter {
 
         $regexyoutube = '/('
             . '(<video[^>]+><source[^>]*src="(((http|https):\/\/){0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)'
-            . '(\/watch\?v=)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>[^<]*<\/video>)'
+            . '(\/watch\?v=)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>.*?<\/video>)'
             . '|(<iframe[^>]*src="((http|https):\/\/{0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\/embed\/\b)'
             . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>.*?<\/iframe>)'
             . '|(<iframe[^>]*src="((http|https):\/\/{0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)(\/watch\?v=)'
@@ -106,15 +106,15 @@ class text_filter extends \core_filters\text_filter {
             . '|(<a[^>]*href="(((http|https):\/\/){0,1}(\bwww\.youtube\b(\b\-nocookie\b)?\b\.com\b)(\/embed\/)'
             . '([\w\d\-]+)([\w@\?^=%&\/~+#\-;]+)?)"[^>]*>[^<]+<\/a>)'
             // Plain URL patterns (not inside HTML tags).
-            . '|(?<!["\'])((https?:\/\/)(www\.youtube(-nocookie)?\.com)(\/watch\?v=)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]*)?)'
-            . '|(?<!["\'])((https?:\/\/)(www\.youtube(-nocookie)?\.com)(\/embed\/)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]*)?)'
-            . ')/';
+            . '|(?<!["\'>\/])((?<!</source>)\s*)((https?:\/\/)(www\.youtube(-nocookie)?\.com)(\/watch\?v=)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]*)?)(?![^<]*<\/video>)'
+            . '|(?<!["\'>\/])((?<!</source>)\s*)((https?:\/\/)(www\.youtube(-nocookie)?\.com)(\/embed\/)([\w\d\-]+)([\w@\?^=%&\/~+#\-;]*)?)(?![^<]*<\/video>)'
+            . ')/s';
         $regexyoutubeshorturl = '/('
             . '(<a[^>]*href="((http|https):\/\/youtu\.be\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]+)?)"[^>]*>[^<]+<\/a>)'
-            . '|(<video[^>]+><source[^>]*src="((http|https):\/\/youtu\.be\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]+)?)"[^>]*>[^<]*<\/video>)'
+            . '|(<video[^>]+><source[^>]*src="((http|https):\/\/youtu\.be\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]+)?)"[^>]*>.*?<\/video>)'
             // Plain short URL pattern (not inside HTML tags).
-            . '|(?<!["\'])((https?:\/\/)(youtu\.be)\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]*)?)'
-            . ')/';
+            . '|(?<!["\'>\/])((https?:\/\/)(youtu\.be)\/([\w\d\-_]+)([\w@\?^=%&\/~+#\-]*)?)(?![^<]*<\/video>)'
+            . ')/s';
 
         $patternsandcallbacks = [
             $regexmediaplugindiv => [$this, 'mediaplugin_div_callback'],
