@@ -17,17 +17,17 @@
 {{!
     @template filter_mbsyoutube/mbsyoutubetwoclick
 }}
-<div class="mbsyoutube-responsive mbsyoutube-responsive-16by9 mbsyoutube-wrapper mbsyoutube-twoclickwarning-wrapper" style="{{mbswrapperstyles}}">
-    <div class="mbsyoutube-twoclickwarning-buttonbox mbsyoutube-message-hidden" {{{optionacceptedhidden}}}>
+<span class="mbsyoutube-responsive mbsyoutube-responsive-16by9 mbsyoutube-wrapper mbsyoutube-twoclickwarning-wrapper" style="{{mbswrapperstyles}}">
+    <span class="mbsyoutube-twoclickwarning-buttonbox mbsyoutube-message-hidden" {{{optionacceptedhidden}}}>
         <img class="mbsyoutube-img-logo" src="{{mebislogourl}}" />
         <br>
-        <div class="mbsyoutube-twoclickwarning-boxtext">{{{mbstwoclickboxtext}}}</div>
+        <span class="mbsyoutube-twoclickwarning-boxtext">{{{mbstwoclickboxtext}}}</span>
         <input type="button" class="mbsyoutube-twoclickwarning-button mbsyoutube-confirm" value="{{{mbswatchvideo}}}"/>
-    </div>
-    <div class="mbsyoutube-twoclickwarning-buttonbox mbsyoutube-message-show">
+    </span>
+    <span class="mbsyoutube-twoclickwarning-buttonbox mbsyoutube-message-show">
         <a href="{{popupnurl}}" class="mbsyoutube-twoclickwarning-button">{{{mbsopenpopup}}}</a>
-    </div>
-    <div id="yt___{{uniqid}}___{{videoid}}" class="mbsyoutube-frame mbsyoutube-responsive-item mbsyoutube-ytiframe" allowfullscreen="allowfullscreen"
+    </span>
+    <span id="yt___{{uniqid}}___{{videoid}}" class="mbsyoutube-frame mbsyoutube-responsive-item mbsyoutube-ytiframe" allowfullscreen="allowfullscreen"
         data-extern='{{{mbsplayerdetails}}}' crossorigin="anonymous" {{optionnotacceptedhidden}}>
-    </div>
-</div>
+    </span>
+</span>

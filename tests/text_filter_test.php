@@ -53,11 +53,11 @@ final class text_filter_test extends \advanced_testcase {
         $filter = new text_filter($context, []);
 
         // Expected significant part for the next few assertions.
-        $expected = '<div class="mbsyoutube-twoclickwarning-boxtext">'
+        $expected = '<span class="mbsyoutube-twoclickwarning-boxtext">'
         . '<strong>Data protection notice</strong>'
         . '<br />As soon as the video is played, personal <a href="https://policies.google.com/privacy" '
         . 'target="_blank" style="color:#e3e3e3 !important;">data</a> such as the IP address is transmitted to YouTube'
-        . '</div>
+        . '</span>
         <input type="button" class="mbsyoutube-twoclickwarning-button mbsyoutube-confirm" value="'
         . 'Watch video anyway ✓'
         . '"/>';
@@ -494,7 +494,7 @@ final class text_filter_test extends \advanced_testcase {
 
         // Testcase: Plain YouTube URLs without any HTML wrapper (no <a>, <iframe>, <video> tags).
         // These are raw URLs directly in text, not embedded in any HTML element.
-        $expected = '<div class="mbsyoutube-twoclickwarning-boxtext">'
+        $expected = '<span class="mbsyoutube-twoclickwarning-boxtext">'
         . '<strong>Data protection notice</strong>';
         $expected2 = '{"modestbranding":1,"iv_load_policy":3,"enablejsapi":1,"origin":"' . $CFG->wwwroot .'"}';
         $expected3 = 'id="yt___phpunit___PlainTextId"';
@@ -683,5 +683,19 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringContainsString($expected2, $filtered);
         $this->assertStringNotContainsString('class="mediaplugin mediaplugin_videojs', $filtered);
         $this->assertStringNotContainsString('youtube-nocookie', $filtered);
+
+        // Testcase: paragraph-wrapped YouTube links must not inject block-level wrappers.
+        $youtube = '<p>Intro<br><a href="https://www.youtube.com/watch?v=ParagraphVid1">Link zum Video</a></p>'
+            . '<p>Das ist das Ende!</p>';
+        $filtered = $filter->filter($youtube);
+
+        $dom = new \DOMDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadHTML('<?xml encoding="utf-8" ?><html><body>' . $filtered . '</body></html>');
+        libxml_clear_errors();
+
+        $xpath = new \DOMXPath($dom);
+        $this->assertSame(0, $xpath->query('/html/body/div[contains(@class, "mbsyoutube-twoclickwarning-wrapper")]')->length);
+        $this->assertSame(1, $xpath->query('/html/body/p//span[contains(@class, "mbsyoutube-twoclickwarning-wrapper")]')->length);
     }
 }
