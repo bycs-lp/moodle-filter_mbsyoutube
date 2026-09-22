@@ -34,7 +34,7 @@ define('YOUTUBENOCOOKIEURL', "https://www.youtube-nocookie.com/watch?v=");
 $PAGE->set_pagelayout('popup');
 $PAGE->set_context(context_system::instance());
 
-$vid = required_param('vid', PARAM_TEXT);
+$vid = required_param('vid', PARAM_ALPHANUMEXT);
 $timestart  = optional_param('timestart', 0, PARAM_INT);
 $timeend = optional_param('timeend', 0, PARAM_INT);
 
