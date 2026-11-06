@@ -24,8 +24,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['cachedef_mbsexternalsourceaccept'] = 'Speichert die Zustimmung, dass der User mit der Weitergabe der IP-Adresse an '
-    . 'YouTube einverstanden ist, im Cache.';
 $string['filtername'] = 'YouTube Einwilligungsdialog rendern';
 $string['mbsopenpopup'] = 'Videoplayer öffnen';
 $string['mbstwoclickboxtext'] = '<strong>Datenschutzhinweis</strong>'
