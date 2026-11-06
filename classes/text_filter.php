@@ -16,7 +16,6 @@
 
 namespace filter_mbsyoutube;
 
-use core_cache\cache;
 use moodle_url;
 use context_system;
 use stdClass;
@@ -36,11 +35,6 @@ class text_filter extends \core_filters\text_filter {
     private $youtubevideoids = [];
 
     /**
-     * @var int $courseid Course ID of the recent course.
-     */
-    private $courseid;
-
-    /**
      * Setup page with filter requirements and other prepare stuff.
      *
      * Override this method if the filter needs to setup page
@@ -55,14 +49,11 @@ class text_filter extends \core_filters\text_filter {
      * @since Moodle 2.3
      */
     public function setup($page, $context) {
-        $this->courseid = $page->course->id;
-        if (!$this->get_hasuseraccepted()) {
-            $page->requires->js_call_amd('filter_mbsyoutube/sethasuseraccepted', 'init', ['courseid' => $this->courseid]);
-        } else {
-            $url = new moodle_url('https://www.youtube.com/iframe_api');
-            $page->requires->js($url);
-            $page->requires->js_call_amd('filter_mbsyoutube/youtube_api', 'init');
+        if (!$page->requires->should_create_one_time_item_now('filter_mbsyoutube_setup')) {
+            return;
         }
+        // The consent is stored in the browser for the current session only, so the JS gets a hash of the session.
+        $page->requires->js_call_amd('filter_mbsyoutube/sethasuseraccepted', 'init', [sha1(sesskey())]);
     }
 
     /**
@@ -154,26 +145,12 @@ class text_filter extends \core_filters\text_filter {
     }
 
     /**
-     * Get hasuseraccepted from cache.
-     *
-     * @return mixed $hasuseraccepted  - the data that was associated with the key,
-     *                                   or false if the key did not exist.
-     */
-    protected function get_hasuseraccepted() {
-        global $USER;
-        $courseid = $this->courseid;
-        $cache = cache::make('filter_mbsyoutube', 'mbsexternalsourceaccept');
-        return $cache->get($USER->id . "_" . $courseid . "_YouTube");
-    }
-
-    /**
      * Callback to replace mediaplugin_videojs div wrapper with DSGVO conform style.
      *
      * @param array $match Regex match array
      * @return string Replaced HTML content
      */
     protected function mediaplugin_div_callback(array $match): string {
-        $hasuseraccepted = $this->get_hasuseraccepted();
         $styles = $this->get_style_attributs();
 
         // Video ID is at index 3 in the regex pattern.
@@ -204,7 +181,7 @@ class text_filter extends \core_filters\text_filter {
 
         $urlparam = self::build_url_querystring($params);
         array_push($this->youtubevideoids, $vid);
-        $wrapper = $this->render_two_click_version_youtube($vid, $hasuseraccepted, $urlparam['paramarr'], $styles);
+        $wrapper = $this->render_two_click_version_youtube($vid, $urlparam['paramarr'], $styles);
 
         return $wrapper;
     }
@@ -216,7 +193,6 @@ class text_filter extends \core_filters\text_filter {
      * @return string Url
      */
     protected function youtube_callback(array $match): string {
-        $hasuseraccepted = $this->get_hasuseraccepted();
         $styles = $this->get_style_attributs();
 
         $vid = null;
@@ -263,7 +239,7 @@ class text_filter extends \core_filters\text_filter {
 
         $urlparam = self::build_url_querystring($params);
         array_push($this->youtubevideoids, $vid);
-        $iframe = $this->render_two_click_version_youtube($vid, $hasuseraccepted, $urlparam['paramarr'], $styles);
+        $iframe = $this->render_two_click_version_youtube($vid, $urlparam['paramarr'], $styles);
 
         return $iframe;
     }
@@ -275,8 +251,6 @@ class text_filter extends \core_filters\text_filter {
      * @return string $ytwrapper YouTube Video wrapper element.
      */
     protected function youtube_shorturl_callback(array $match): string {
-
-        $hasuseraccepted = $this->get_hasuseraccepted();
         $styles = $this->get_style_attributs();
 
         $vid = null;
@@ -315,7 +289,7 @@ class text_filter extends \core_filters\text_filter {
 
         $urlparam = self::build_url_querystring($params);
         array_push($this->youtubevideoids, $vid);
-        $ytwrapper = $this->render_two_click_version_youtube($vid, $hasuseraccepted, $urlparam['paramarr'], $styles);
+        $ytwrapper = $this->render_two_click_version_youtube($vid, $urlparam['paramarr'], $styles);
 
         return $ytwrapper;
     }
@@ -324,7 +298,6 @@ class text_filter extends \core_filters\text_filter {
      * Generates the two click behaviour from a youtube url.
      *
      * @param string $videoid
-     * @param bool $hasuseraccepted True if provider (YouTube) is accepted
      * @param array $urlparam Contains all parameters to post to iframe.
 
      * @param string $styles
@@ -332,7 +305,6 @@ class text_filter extends \core_filters\text_filter {
      */
     private function render_two_click_version_youtube(
             string $videoid,
-            bool $hasuseraccepted = false,
             array $urlparam = [],
             string $styles = ''
     ): string {
@@ -366,14 +338,6 @@ class text_filter extends \core_filters\text_filter {
             $logourl = null;
         }
         $data->mebislogourl = $logourl;
-
-        if ($hasuseraccepted) {
-            $data->optionacceptedhidden = ' hidden="hidden"';
-            $data->optionnotacceptedhidden = "";
-        } else {
-            $data->optionacceptedhidden = "";
-            $data->optionnotacceptedhidden = ' hidden="hidden"';
-        }
 
         return $OUTPUT->render_from_template('filter_mbsyoutube/mbsyoutubetwoclick', $data);
     }

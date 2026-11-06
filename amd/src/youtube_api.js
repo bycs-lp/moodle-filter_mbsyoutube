@@ -24,27 +24,44 @@
 let videos = {};
 let players = {};
 
-export const init = (loaded = false) => {
-    if (!loaded) {
-        // Need to wait for the load event, since the iframe_api might not be there yet.
-        window.addEventListener('load', initPlayer, false);
-    }
-
-    // If there is no mbsyoutube-ytiframe yet: Observe the DOM if there will be a change.
-    var observer = new MutationObserver(function() {
-        // Fired when a mutation occurs.
-        if (document.querySelectorAll('.mbsyoutube-ytiframe').length > 0) {
-            initPlayer();
-        }
-    });
-
-    // Define what element should be observed by the observer
-    // and what types of mutations trigger the callback
-    observer.observe(document, {
-        subtree: true,
-        childList: true
+export const init = () => {
+    whenApiReady(() => {
+        initPlayer();
+        // Videos might be added to the document later: Observe the DOM for a change.
+        new MutationObserver(initPlayer).observe(document, {
+            subtree: true,
+            childList: true
+        });
     });
 };
+
+/**
+ * Run the callback as soon as YT.Player is available.
+ *
+ * The iframe API loads the widget API asynchronously, so YT.Player might not exist yet when the iframe API is loaded.
+ * YT.ready() is not officially documented, therefore fall back to the documented onYouTubeIframeAPIReady.
+ *
+ * @param {function} callback
+ */
+function whenApiReady(callback) {
+    if (!window.YT) {
+        return;
+    }
+    if (typeof window.YT.ready === 'function') {
+        window.YT.ready(callback);
+    } else if (window.YT.Player) {
+        callback();
+    } else {
+        // Do not overwrite an existing handler, call it before our callback.
+        const previous = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = () => {
+            if (typeof previous === 'function') {
+                previous();
+            }
+            callback();
+        };
+    }
+}
 
 /**
  * Initialize the Players.
@@ -66,6 +83,9 @@ function initPlayer() {
  */
 function loadPlayers() {
     for (const [key, value] of Object.entries(videos)) {
+        if (players[key]) {
+            continue;
+        }
         createYouTubePlayer(value.videoid, value.ytparam, key);
     }
 }

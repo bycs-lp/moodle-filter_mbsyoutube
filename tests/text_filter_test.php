@@ -78,6 +78,8 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertStringContainsString($expected3, $filtered);
         $this->assertStringContainsString($expected4, $filtered);
         $this->assertStringContainsString($expected5, $filtered);
+        // The player is hidden until the consent is given in the browser.
+        $this->assertStringContainsString('crossorigin="anonymous" hidden>', $filtered);
 
         // Youtube url as plain text.
         $youtube = '<p>YouTube eingefügt<br>'
