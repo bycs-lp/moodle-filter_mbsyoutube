@@ -21,12 +21,19 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-let videos = {};
-let players = {};
+/** @var {WeakSet} elements which already have a player */
+const players = new WeakSet();
+let copies = 0;
 
-export const init = () => {
+/**
+ * Initialise the players as soon as the API is ready.
+ *
+ * @param {function} onReady called when the API is ready and the players are initialised
+ */
+export const init = (onReady) => {
     whenApiReady(() => {
         initPlayer();
+        onReady();
         // Videos might be added to the document later: Observe the DOM for a change.
         new MutationObserver(initPlayer).observe(document, {
             subtree: true,
@@ -64,50 +71,31 @@ function whenApiReady(callback) {
 }
 
 /**
- * Initialize the Players.
+ * Create a player for each player element which has none yet.
+ *
+ * Copies of an element (e.g. in a modal of format_tiles) have the same id as the original, so they get a new unique id.
+ * The YouTube API replaces the div by an iframe, therefore only divs are taken into account.
  */
 function initPlayer() {
-
-    document.querySelectorAll('.mbsyoutube-ytiframe').forEach(function(node) {
-        var playerid = node.id.split("___");
-        var videoid = playerid[2];
-        var videouniqid = playerid[1];
-        getJsonObjectFromIdAttribut(videoid, 'data-extern', videouniqid);
-    });
-
-    loadPlayers();
-}
-
-/**
- * Initialise the players.
- */
-function loadPlayers() {
-    for (const [key, value] of Object.entries(videos)) {
-        if (players[key]) {
-            continue;
+    document.querySelectorAll('div.mbsyoutube-ytiframe').forEach((node) => {
+        if (players.has(node)) {
+            return;
         }
-        createYouTubePlayer(value.videoid, value.ytparam, key);
-    }
-}
-
-/**
- * Create a YouTube player for a given video and add it to the players object.
- * @param {string} videoid
- * @param {*} ytparam
- * @param {string} uniqeid
- */
-function createYouTubePlayer(videoid, ytparam, uniqeid) {
-    const targetElement = document.getElementById('yt___' + uniqeid + '___' + videoid);
-    if (targetElement) {
-        targetElement.removeAttribute('hidden');
-    }
-    // eslint-disable-next-line no-undef
-    players[uniqeid] = new YT.Player('yt___' + uniqeid + '___' + videoid, {
-        videoId: videoid,
-        playerVars: ytparam,
-        events: {
-            'onError': catchError
+        players.add(node);
+        const videoid = node.id.split('___')[2];
+        if (document.getElementById(node.id) !== node) {
+            copies++;
+            node.id += '___copy' + copies;
         }
+        node.removeAttribute('hidden');
+        // eslint-disable-next-line no-undef
+        new YT.Player(node, {
+            videoId: videoid,
+            playerVars: JSON.parse(node.getAttribute('data-extern')),
+            events: {
+                'onError': catchError
+            }
+        });
     });
 }
 
@@ -119,16 +107,4 @@ function catchError(event) {
     if (event.data == 100) {
         window.console.log("Error - The video is not accessible!");
     }
-}
-
-/**
- * Make a json object from a data attribute and add it to the video object.
- * @param {string} videoid
- * @param {string} attribut
- * @param {string} uniqid
- */
-function getJsonObjectFromIdAttribut(videoid, attribut, uniqid) {
-    var jsonobj = JSON.parse(
-        document.getElementById('yt___' + uniqid + '___' + videoid).getAttribute(attribut));
-    videos[uniqid] = {ytparam: jsonobj, videoid: videoid};
 }

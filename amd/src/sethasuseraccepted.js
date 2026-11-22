@@ -27,8 +27,8 @@ const STORAGEKEY = 'filter_mbsyoutube_consent';
 const LIFETIME = 24 * 60 * 60 * 1000;
 
 let sessionhash = '';
-let accepted = false;
-let apiloaded = false;
+let apiloading = false;
+let apiready = false;
 let initialised = false;
 
 /**
@@ -42,9 +42,11 @@ export const init = (hash) => {
     }
     initialised = true;
     sessionhash = hash;
-    accepted = hasConsent();
+    // Event delegation, so copies of the box (e.g. in a modal of format_tiles) work as well.
+    // Capture phase, so that the click does not reach handlers of surrounding elements.
+    document.addEventListener('click', onClick, true);
     initWrappers();
-    if (accepted) {
+    if (hasConsent()) {
         loadYouTubeApi();
     }
     // Wrappers might be added to the document later: Observe the DOM for a change.
@@ -89,41 +91,63 @@ function storeConsent() {
 }
 
 /**
- * Load the YouTube iframe API once and initialise the players.
+ * Load the YouTube iframe API and initialise the players.
+ *
+ * The boxes are hidden only when the API is ready. If loading fails, an error is shown and a further click retries.
  */
 function loadYouTubeApi() {
-    if (apiloaded) {
+    if (apiloading || apiready) {
         return;
     }
-    apiloaded = true;
+    apiloading = true;
+    showLoadError(false);
     const ytscript = document.createElement('script');
-    ytscript.onload = () => initYTPlayers();
+    ytscript.onload = () => initYTPlayers(() => {
+        apiready = true;
+        initWrappers();
+    });
+    ytscript.onerror = () => {
+        ytscript.remove();
+        apiloading = false;
+        showLoadError(true);
+    };
     ytscript.src = 'https://www.youtube.com/iframe_api';
     document.head.appendChild(ytscript);
 }
 
 /**
- * Handle the click on the confirm button.
+ * Show or hide the load error message in all boxes.
+ *
+ * @param {boolean} show
+ */
+function showLoadError(show) {
+    document.querySelectorAll('.mbsyoutube-loaderror').forEach((message) => {
+        message.hidden = !show;
+    });
+}
+
+/**
+ * Handle a click on a confirm button.
  *
  * @param {Event} e
  */
-function onConfirm(e) {
+function onClick(e) {
+    if (!e.target.closest('.mbsyoutube-confirm')) {
+        return;
+    }
     e.stopPropagation();
     storeConsent();
-    accepted = true;
-    initWrappers();
     loadYouTubeApi();
 }
 
 /**
- * Bind the confirm buttons and show the wrappers, which are hidden until the consent is checked.
+ * Show the wrappers, which are hidden until the consent is checked, and hide the boxes when the players are ready.
  */
 function initWrappers() {
     document.querySelectorAll('.mbsyoutube-twoclickwarning-wrapper:not(.mbsyoutube-ready)').forEach((wrapper) => {
-        wrapper.querySelector('.mbsyoutube-confirm')?.addEventListener('click', onConfirm);
         wrapper.classList.add('mbsyoutube-ready');
     });
-    if (accepted) {
+    if (apiready) {
         document.querySelectorAll('.mbsyoutube-confirm').forEach((button) => {
             button.closest('.mbsyoutube-twoclickwarning-buttonbox').hidden = true;
         });

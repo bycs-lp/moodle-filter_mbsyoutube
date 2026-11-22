@@ -25,6 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['filtername'] = 'YouTube Einwilligungsdialog rendern';
+$string['mbsloaderror'] = 'YouTube konnte nicht geladen werden. Bitte erneut versuchen.';
 $string['mbsopenpopup'] = 'Videoplayer öffnen';
 $string['mbstwoclickboxtext'] = '<strong>Datenschutzhinweis</strong>'
     . '<br />Sobald das Video abgespielt wird, werden an YouTube persönliche <a href="https://policies.google.com/privacy" '
