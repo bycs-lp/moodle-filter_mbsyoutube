@@ -24,8 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['cachedef_mbsexternalsourceaccept'] = 'Caches the consent that the user agrees to share the IP address with YouTube.';
 $string['filtername'] = 'Render YouTube consent dialog';
+$string['mbsloaderror'] = 'YouTube could not be loaded. Please try again.';
 $string['mbsopenpopup'] = 'Open video player';
 $string['mbstwoclickboxtext'] = '<strong>Data protection notice</strong>'
     . '<br />As soon as the video is played, personal <a href="https://policies.google.com/privacy" '

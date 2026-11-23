@@ -66,6 +66,18 @@
     background-repeat: repeat;
 }
 
+/* Hide the wrapper until the JS has checked the consent, but show it after 3 seconds in any case. */
+.jsenabled .mbsyoutube-twoclickwarning-wrapper:not(.mbsyoutube-ready) {
+    visibility: hidden;
+    animation: mbsyoutube-reveal 0s 3s forwards;
+}
+
+@keyframes mbsyoutube-reveal {
+    to {
+        visibility: visible;
+    }
+}
+
 @media only screen and (max-width: 650px){
     .mbsyoutube-twoclickwarning-wrapper {
         min-height: 250px;
